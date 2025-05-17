@@ -17,8 +17,18 @@ struct moneyLogsApp: App {
 
     var body: some Scene {
         WindowGroup {
-            EntryFormView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            TabView {
+                EntryFormView()
+                    .tabItem {
+                        Label("Input", systemImage: "plus.circle")
+                    }
+
+                LogListView()
+                    .tabItem {
+                        Label("History", systemImage: "list.bullet")
+                    }
+            }
+            .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

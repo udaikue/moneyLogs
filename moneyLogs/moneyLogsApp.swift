@@ -10,10 +10,14 @@ import SwiftUI
 @main
 struct moneyLogsApp: App {
     let persistenceController = PersistenceController.shared
+    
+    init() {
+        persistenceController.preloadCategoriesIfNeeded()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EntryFormView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

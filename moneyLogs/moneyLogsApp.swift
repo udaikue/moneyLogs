@@ -10,11 +10,25 @@ import SwiftUI
 @main
 struct moneyLogsApp: App {
     let persistenceController = PersistenceController.shared
+    
+    init() {
+        persistenceController.preloadCategoriesIfNeeded()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            TabView {
+                EntryFormView()
+                    .tabItem {
+                        Label("Input", systemImage: "plus.circle")
+                    }
+
+                LogListView()
+                    .tabItem {
+                        Label("History", systemImage: "list.bullet")
+                    }
+            }
+            .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

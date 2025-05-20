@@ -10,25 +10,6 @@ import CoreData
 struct PersistenceController {
     static let shared = PersistenceController()
 
-    @MainActor
-    static let preview: PersistenceController = {
-        let result = PersistenceController(inMemory: true)
-        let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
-        do {
-            try viewContext.save()
-        } catch {
-            // Replace this implementation with code to handle the error appropriately.
-            // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
-        return result
-    }()
-
     let container: NSPersistentContainer
 
     init(inMemory: Bool = false) {
@@ -55,3 +36,45 @@ struct PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
     }
 }
+
+extension PersistenceController {
+    func preloadCategoriesIfNeeded() {
+        let context = container.viewContext
+        let fetchRequest = NSFetchRequest<LogCategory>(entityName: "LogCategory")
+        fetchRequest.fetchLimit = 1
+
+        do {
+            let count = try context.count(for: fetchRequest)
+            if count == 0 {
+                let defaultCategories = [
+                    ("食費", "#FF6B6B"),
+                    ("日用品", "#FFA07A"),
+                    ("本・雑誌", "#FFD700"),
+                    ("美容", "#DA70D6"),
+                    ("交際費", "#FF8C00"),
+                    ("光熱費", "#20B2AA"),
+                    ("衣料", "#4682B4"),
+                    ("雑貨", "#6A5ACD"),
+                    ("娯楽", "#FF1493"),
+                    ("ひとり外食", "#CD5C5C"),
+                    ("通信費", "#00CED1"),
+                    ("特別費", "#A0522D"),
+                    ("医療費", "#8A2BE2"),
+                    ("旅費", "#3CB371"),
+                    ("家賃", "#2F4F4F")
+                ]
+
+                for (name, color) in defaultCategories {
+                    let category = LogCategory(context: context)
+                    category.name = name
+                    category.color = color
+                }
+                try context.save()
+                print("Default categories have been registered.")
+            }
+        } catch {
+            print("Failed to register default categories: \(error)")
+        }
+    }
+}
+

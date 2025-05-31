@@ -23,22 +23,30 @@ struct EntryFormView: View {
 
     var body: some View {
         NavigationView {
-            Form {
-                DatePicker("Date", selection: $date, displayedComponents: .date)
+            VStack {
+                Form {
+                    DatePicker("Date", selection: $date, displayedComponents: .date)
 
-                Picker("Category", selection: $selectedCategory) {
-                    ForEach(categories, id: \.self) { category in
-                        Text(category.name ?? "").tag(category as LogCategory?)
+                    Picker("Category", selection: $selectedCategory) {
+                        ForEach(categories, id: \.self) { category in
+                            Text(category.name ?? "").tag(category as LogCategory?)
+                        }
                     }
+
+                    TextField("Amount", text: $amount)
+                        .keyboardType(.decimalPad)
+
+                    TextField("Memo (optional)", text: $memo)
                 }
 
-                TextField("Amount", text: $amount)
-                    .keyboardType(.decimalPad)
-
-                TextField("Memo (optional)", text: $memo)
-
-                Button("Save") {
-                    saveEntry()
+                Button(action: saveEntry) {
+                    Text("Save")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(canSave ? Color.blue : Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                        .padding([.horizontal, .bottom])
                 }
                 .disabled(!canSave)
             }
@@ -49,6 +57,7 @@ struct EntryFormView: View {
             }
         }
     }
+
 
     private var canSave: Bool {
         selectedCategory != nil && Decimal(string: amount) != nil

@@ -18,7 +18,7 @@ struct moneyLogsApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                EntryFormView()
+                EditableEntryFormView()
                     .tabItem {
                         Label("Input", systemImage: "plus.circle")
                     }

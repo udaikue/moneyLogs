@@ -1,15 +1,18 @@
 //
-//  EntryFormView.swift
+//  EditableEntryFormView.swift
 //  moneyLogs
 //
-//  Created by ikue uda on 2025/05/17.
+//  Created by ikue uda on 2025/05/31.
 //
 
 import SwiftUI
 import CoreData
 
-struct EntryFormView: View {
+struct EditableEntryFormView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.dismiss) private var dismiss
+
+    var entryToEdit: LogEntry? = nil // nilなら新規
 
     @State private var date = Date()
     @State private var selectedCategory: LogCategory?
@@ -22,7 +25,7 @@ struct EntryFormView: View {
     private var categories: FetchedResults<LogCategory>
 
     var body: some View {
-        NavigationView {
+        VStack {
             Form {
                 DatePicker("Date", selection: $date, displayedComponents: .date)
 
@@ -36,16 +39,28 @@ struct EntryFormView: View {
                     .keyboardType(.decimalPad)
 
                 TextField("Memo (optional)", text: $memo)
-
-                Button("Save") {
-                    saveEntry()
-                }
-                .disabled(!canSave)
             }
-            .onAppear {
-                if selectedCategory == nil && !categories.isEmpty {
-                    selectedCategory = categories.first
-                }
+
+            Button("Save") {
+                saveEntry()
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(canSave ? Color.blue : Color.gray)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+            .padding(.horizontal)
+            .disabled(!canSave)
+        }
+        .onAppear {
+            if let entry = entryToEdit {
+                // 編集用に初期値をセット
+                date = entry.date ?? Date()
+                amount = entry.amount?.stringValue ?? ""
+                memo = entry.memo ?? ""
+                selectedCategory = categories.first(where: { $0.name == entry.category })
+            } else {
+                selectedCategory = categories.first
             }
         }
     }
@@ -55,28 +70,20 @@ struct EntryFormView: View {
     }
 
     private func saveEntry() {
-        guard let selectedCategory = selectedCategory,
-              let amountValue = Decimal(string: amount) else { return }
-
-        let entry = LogEntry(context: viewContext)
+        let entry = entryToEdit ?? LogEntry(context: viewContext)
         entry.date = date
-        entry.amount = amountValue as NSDecimalNumber
+        entry.category = selectedCategory?.name
         entry.memo = memo
-        entry.category = selectedCategory.name
+        if let amountDecimal = Decimal(string: amount) {
+            entry.amount = amountDecimal as NSDecimalNumber
+        }
 
         do {
             try viewContext.save()
-            print("Entry saved")
-            resetForm()
+            print("Saved entry")
+            dismiss()
         } catch {
             print("Failed to save entry: \(error)")
         }
-    }
-
-    private func resetForm() {
-        date = Date()
-        selectedCategory = categories.first
-        amount = ""
-        memo = ""
     }
 }

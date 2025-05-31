@@ -72,6 +72,7 @@ struct LogListView: View {
                         }
                         .padding(.vertical, 6)
                     }
+                    .onDelete(perform: deleteEntry)
                 }
             }
             .onAppear {
@@ -83,17 +84,17 @@ struct LogListView: View {
         }
     }
 
-    // 月移動ロジック
+    // 表示月移動
     private func moveMonth(by value: Int) {
         if let newMonth = calendar.date(byAdding: .month, value: value, to: currentMonth) {
             currentMonth = newMonth
         }
     }
 
-    // 指定月のLogEntryだけ取得
+    // 指定月のログだけ取得
     private func fetchEntries() {
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
-        let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth)!
+        let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, second: -1), to: startOfMonth)!
 
         let request: NSFetchRequest<LogEntry> = LogEntry.fetchRequest()
         request.predicate = NSPredicate(format: "date >= %@ AND date <= %@", startOfMonth as NSDate, endOfMonth as NSDate)
@@ -102,8 +103,24 @@ struct LogListView: View {
         do {
             entries = try viewContext.fetch(request)
         } catch {
-            print("⚠️ Fetch failed: \(error)")
+            print("Fetch failed: \(error)")
             entries = []
         }
     }
+
+    private func deleteEntry(at offsets: IndexSet) {
+        for index in offsets {
+            let entry = entries[index]
+            viewContext.delete(entry)
+        }
+
+        do {
+            try viewContext.save()
+            // 表示を更新
+            fetchEntries()
+        } catch {
+            print("Failed to delete: \(error)")
+        }
+    }
+
 }

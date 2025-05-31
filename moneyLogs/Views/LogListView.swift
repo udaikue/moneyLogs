@@ -13,6 +13,7 @@ struct LogListView: View {
 
     @State private var currentMonth = Date()
     @State private var entries: [LogEntry] = []
+    @State private var selectedEntry: LogEntry? = nil
 
     private let calendar = Calendar.current
 
@@ -33,7 +34,7 @@ struct LogListView: View {
     var body: some View {
         NavigationView {
             VStack {
-                // ナビゲーションバー
+                // 月切り替えナビゲーション
                 HStack {
                     Button("＜") {
                         moveMonth(by: -1)
@@ -71,6 +72,10 @@ struct LogListView: View {
                             }
                         }
                         .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedEntry = entry
+                        }
                     }
                     .onDelete(perform: deleteEntry)
                 }
@@ -78,20 +83,26 @@ struct LogListView: View {
             .onAppear {
                 fetchEntries()
             }
-            .onChange(of: currentMonth, initial: false) {
+            .onChange(of: currentMonth, initial: false) { _,_  in
                 fetchEntries()
+            }
+            .sheet(item: $selectedEntry) { entry in
+                EditableEntryFormView(entryToEdit: entry)
+                    .onDisappear {
+                        fetchEntries()
+                    }
             }
         }
     }
 
-    // 表示月移動
+    // 月移動
     private func moveMonth(by value: Int) {
         if let newMonth = calendar.date(byAdding: .month, value: value, to: currentMonth) {
             currentMonth = newMonth
         }
     }
 
-    // 指定月のログだけ取得
+    // 月ごとのデータを取得
     private func fetchEntries() {
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
         let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, second: -1), to: startOfMonth)!
@@ -116,11 +127,9 @@ struct LogListView: View {
 
         do {
             try viewContext.save()
-            // 表示を更新
             fetchEntries()
         } catch {
             print("Failed to delete: \(error)")
         }
     }
-
 }
